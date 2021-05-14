@@ -1,0 +1,66 @@
+---
+title: "Interactive Graph for Displaying Statistical Principle"
+author: "Ethan Mitten"
+date: "2/12/2021"
+output:
+  pdf_document: default
+  html_document: default
+editor_options:
+  chunk_output_type: console
+---
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+#Loading in packages
+library(tidyverse)
+library(manipulate)
+```
+
+```{r, message=FALSE, echo=FALSE, warning=FALSE}
+#Loading in data
+sw <- starwars
+```
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+#Making ggplot with outlier
+ggplot(data = sw, mapping = aes(mass, height)) +
+  geom_point() +
+  geom_smooth(method = "lm") +
+  labs(title="Trend with Outlier", x="Mass", y="Height")
+```
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+#Making ggplot without outlier
+sw %>% filter (mass < 1000) %>%
+ggplot(mapping = aes(mass, height)) +
+  geom_point() +
+  geom_smooth(method = "lm") +
+  xlim(0,1500) +
+  labs(title="Trend Without Outlier", x="Mass", y="Height")
+```
+
+```{r, eval=FALSE}
+#Making interactive graph using picker
+manipulate({  
+  if(Outlier=="With Outlier"){
+    ggplot(data = sw, mapping = aes(mass, height)) +
+      geom_point() +
+      geom_smooth(method = "lm") +
+      labs(title="Trend with Outlier", x="Mass", y="Height")}
+    else{
+    sw %>%
+    filter (mass < 1000) %>%
+    ggplot(mapping = aes(mass, height)) +
+      geom_point() +
+      geom_smooth(method = "lm") +
+      xlim(0,1500) +
+      labs(title="Trend Without Outlier", x="Mass", y="Height")
+  }},
+  Outlier=picker("With Outlier", "Without Outlier")
+)
+```
+
+## Explanation
+
+The statistical principle that was looked at in this example was how a point separated from the data has a big impact on the regression line. The data that was used was characteristics over Star Wars characters and specifically a look at the height and weight of each character. In this dataset Jobba the Hut is an outlier in reference too mass, which is ideal for explaining this principle. 
+
+For the interactive graph there were two graphs that were made, one that included Jobba the Hut and one that did not. Mass was plotted against weight and a trend line was put over the data for each graph. The picker tool inside of manipulate seemed the most appropriate for this, but checkbox would work just as well. After running the code and switching between the two graphs it is noticable the impact that taking out Jobba had on the trend line.

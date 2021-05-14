@@ -1,0 +1,104 @@
+---
+title: "STAT320_MittenHomework7"
+author: "Ethan Mitten"
+date: "4/5/2021"
+output: html_document
+---
+
+```{r message=FALSE, warning=FALSE}
+#remotes::install_github("r-spatial/mapview")
+library(tidyverse)
+library(sf)
+library(leaflet)
+library(mapview)
+library(RColorBrewer)
+library(tmap)
+#install.packages("usmap")
+library(usmap)
+```
+
+```{r}
+knitr::opts_chunk$set(cache = F)
+```
+
+# Question 1
+
+```{r}
+mo_sf <- st_as_sf(maps::map("county", "missouri", plot = FALSE, fill = TRUE))
+```
+
+```{r}
+ggplot(mo_sf) + geom_sf()
+```
+
+# Question 2
+```{r}
+storm <- read.csv('storm_2011.csv')
+mo_storm <- storm %>% filter(State == 'MO')
+```
+
+```{r}
+mo_storm[[2]] <- tolower(mo_storm[[2]])
+mo_storm$Countyname <- paste("missouri", mo_storm$Countyname, sep = ",")
+```
+
+# Question 3
+```{r}
+storm_sf <- st_as_sf(x=mo_storm,
+                     coords = c("Longitude", "Latitude"),
+                     crs = "+proj=longlat + datum=WGS84 + ellps=WGS84 + towgs84=0,0,0")
+storm_sf$geom <- storm_sf$geometry
+```
+
+# Question 4
+```{r}
+new_sf <- inner_join(mo_sf, mo_storm, by=c("ID"="Countyname"))
+```
+
+# Question 5 and 6
+```{r message=FALSE}
+new_sf %>% group_by(ID) %>% summarize(Total_Damage = sum(Damage + Cropdamage)) %>%
+  select(Total_Damage) %>%
+  ggplot() + geom_sf(aes(fill=Total_Damage)) + 
+  labs(title="Total Damage by County in Missouri in 2011", fill="Total Damage", x="Latitude", y="Longitude")
+```
+
+
+# Question 7
+
+```{r}
+new_sf <- new_sf %>%
+  mutate(ID=str_remove(ID, "missouri,"))
+new_sf[[1]] <- str_to_title(new_sf[[1]])
+```
+
+```{r message=FALSE}
+library(systemfonts)
+library(mapview)
+library(leaflet)
+library(leafpop)
+
+Amount.of.Damage <- new_sf %>% group_by(ID) %>% summarize(Total_Damage = sum(Damage + Cropdamage)) %>%
+  select(Total_Damage) %>% st_transform(crs="WGS84")
+
+mapview(Amount.of.Damage, popup = popupTable(new_sf, zcol = c("ID", "Damage", "Cropdamage")), alpha.regions = .7)
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,71 @@
+---
+title: "Test"
+author: "Ethan Mitten"
+date: "2/21/2021"
+output: html_document
+---
+
+```{r}
+act_data <- read.csv("~/Desktop/SeniorSpring/STAT 320/STAT 320 Homework 5/STAT320Homework5/MO_ACT_06-14.csv")
+```
+
+```{r}
+library(tidyverse)
+```
+
+```{r}
+#We want this for the first graph q1
+act_data %>% filter(Ave.Act < 36 & Ave.Act > 1) %>%
+ggplot() +
+  geom_point(aes(Year, Ave.Act, color=Pub.Priv)) +
+  scale_color_manual(name="Type of University", values =alpha(c("black","grey60"),c(1,.3))) +
+  labs(y="Average ACT Score")
+```
+
+```{r}
+#We want this for the second graph q1
+#Goal is to make a shiny app button that flip flops between the two graphs
+act_data %>% filter(Ave.Act < 36 & Ave.Act > 1) %>%
+ggplot() +
+  geom_point(aes(Year, Ave.Act, color=Pub.Priv)) +
+  scale_color_manual(name="Type of University", values =alpha(c("grey60","black"), c(.3,1))) +
+  labs(y="Average ACT Score")
+```
+
+
+```{r}
+#School == input$X
+act_data %>% filter(Ave.Act < 36 & Ave.Act > 1) %>%
+ggplot() +
+  geom_line(aes(Year, Ave.Act)) +
+  ylim(0,36)
+```
+
+```{r}
+#School == input$X
+act_data %>% filter(Ave.Act < 36 & Ave.Act > 1) %>%
+ggplot() +
+  geom_line(aes(Year, Pct.33.36))
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,121 @@
+---
+title: "MittenSTAT320_Homework6"
+author: "Ethan Mitten"
+date: "3/24/2021"
+output: html_document
+---
+
+```{r}
+library(readr)
+library(tidyverse)
+#install.packages("plotly")
+library(plotly)
+library(viridis)
+stars <- read_csv('near_stars.csv')
+```
+
+```{r}
+stars$general_type = substr(stars$spect_type,0,1)
+```
+
+
+```{r}
+ggplot(stars, aes(x=temp, y=L, color=stars$temp, size=stars$amag)) +
+  geom_point() +
+  scale_y_log10() +
+  scale_color_viridis(discrete = FALSE, option = "C")
+```
+
+
+```{r}
+stars %>% group_by(general_type) %>%
+ggplot(stars, mapping = aes(x=temp, y=L, color=stars$temp)) +
+  geom_point() +
+  scale_y_log10() +
+  scale_color_viridis(discrete = FALSE, option = "C") +
+  xlim(0, 12500)
+```
+
+```{r}
+stars %>% filter(general_type == 'G') %>%
+ggplot(aes(x=temp, y=L)) +
+  geom_point() +
+  scale_color_viridis(discrete = FALSE, option = "C") +
+  xlim(0, 12500) + scale_y_log10()
+```
+
+```{r}
+p <- stars %>% plot_ly(x=~temp, y=~L, color =~temp, text = ~paste0("Star Name: ", alt_name, "\nTemperature: ", temp, "\nLuminosity: ", L), colors='YlOrRd', type="scatter", marker = list(size = ~amag), hoverinfo = "text", transforms = list(
+      list(
+        type = 'filter',
+        target = ~general_type,
+        operation = '=',
+        value = stars$general_type)
+      )) %>% 
+  layout(xaxis = list(title ="Temperature (in degrees Kelvin)"), yaxis = list(title = "Luminosity(L)"), title = "Temperature vs. Luminosity by General Star Type") %>% 
+  layout(yaxis = list(type = "log")) %>%
+  layout(plot_bgcolor = 'black') %>% 
+  layout(paper_bgcolor = 'black') %>% 
+  layout(font = list(color = 'white')) %>% 
+  layout(
+        updatemenus=list(
+  list(
+        type = 'dropdown',
+        active = 0,
+        buttons = list(
+          list(method = "restyle",
+               args = list(stars),
+               label = "All"),
+          list(method = "restyle",
+               args = list("transforms[0].value", unique(stars$general_type)[1]),
+               label = unique(stars$general_type)[1]),
+          list(method = "restyle",
+               args = list("transforms[0].value", unique(stars$general_type)[2]),
+               label = unique(stars$general_type)[2]),
+          list(method = "restyle",
+               args = list("transforms[0].value", unique(stars$general_type)[3]),
+               label = unique(stars$general_type)[3]),
+           list(method = "restyle",
+               args = list("transforms[0].value", unique(stars$general_type)[4]),
+               label = unique(stars$general_type)[4]),
+           list(method = "restyle",
+               args = list("transforms[0].value", unique(stars$general_type)[5]),
+               label = unique(stars$general_type)[5]),
+           list(method = "restyle",
+               args = list("transforms[0].value", unique(stars$general_type)[6]),
+               label = unique(stars$general_type)[6]),
+           list(method = "restyle",
+               args = list("transforms[0].value", unique(stars$general_type)[7]),
+               label = unique(stars$general_type)[7]),
+           list(method = "restyle",
+               args = list("transforms[0].value", unique(stars$general_type)[8]),
+               label = unique(stars$general_type)[8])
+
+        )
+      )
+    ))
+p
+```
+
+The main graph for this assignment puts together all of the datapoints and compares them with the variables temperature and luminosity or temp and L as they were displayed in the dataset. This graph allows a user to shuffle between each of the class types and see how stars compare to each other in their respective classes. The most important step in order to make the graph how I wanted was slicing the column spec_type so that I could get the general classes of each star. From there I was able to go and use the function transforms to get the unique values from the new column I made which was called, general_type. I thought that color was a really important aspect of this assignment. The use of a color palette like viridis gives the viewer a completely different impression of the data and what we are visualizing. Instead I used a color package that stood out in the black background, but one I also thought was associated with hot temperatures. 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

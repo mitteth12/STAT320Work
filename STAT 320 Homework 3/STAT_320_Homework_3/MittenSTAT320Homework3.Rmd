@@ -1,0 +1,121 @@
+---
+title: "STAT 320 Homework 3"
+author: "Ethan Mitten"
+date: "1/31/2021"
+output: pdf_document
+---
+
+```{r include=FALSE}
+library(tidyverse)
+library(readxl)
+#install.packages("reshape2")
+library(reshape2)
+#install.packages("scales")
+library(scales)
+#install.packages("ggforce")
+library(ggforce)
+
+playfair <- read.csv("playfair_european_nations.csv")
+playfair$Country <- fct_reorder(playfair$Country, playfair$Area, .desc=TRUE)
+```
+# Homework 3
+
+## Part 1
+
+I believe that there are some really good principles of design and data science that are used. One of them being the use of size in the graph. Playfair was able too put so much information into one graph and he was able to do this one by his use of size when looking at the different areas of the countries. You could argue that amount of area might be a little irrelevant when talking about taxation, but for the purpose of information being put onto a graph the use of size was very productive.
+
+Another element that goes together better with principles of design is the use of color. The use of color is very aesthetically appealing with Playfair's use of softer colors. All of the colors are also very contrasting from each other. Again the one minor critique I would have with the use of color though is the fact that Playfair used red for the bar graph and then also the cirlce graph. As Dr. Fine explained in a previous lecture a change in color should mean a change in information and a change in shade should be the same information , but numerically different.
+
+With the good parts there are also a fair amount of critiques. One critique could be an excessive amount of content in the graph. While it is interesting that Playfair was able too put all that data into one graph some of the information can be displayed in a simpler way.
+
+The biggest critique I have for this graph is that there are no x-axis, y-axis, or bar labels. In order too understand what is going on in this graph you need too read some background information which is a little defeating of the purpose of developing a graph. From reading I am assuming that the red bar indicates population, the yellow represents taxation, but I cannot say that with certainity without labels.
+
+Lastly, and I do not know how well this would portray the data without actually visualizing the graph like this, but I wonder if it would be more beneficial to order by taxation, so we can see Playfair's main claim a little more clear. I think a side-by-side bar chart sorted by taxation might give a better picture of the frustrations Playfair was feeling.
+
+All in all, the graph does communicate what it was meant too as long as the information on the graph is what is inferred. It is shocking too see the amount of taxation that is going on for Britian and Ireland considering the size of the country.
+
+
+## Part 2
+
+```{r}
+#Take data down so able to use melt function for bar graph
+playfairvars <- c("Country", "Population", "Taxation")
+playfair2 <- playfair[playfairvars]
+```
+
+```{r}
+playfair3 <- melt(playfair2, id.vars='Country')
+```
+
+```{r include=FALSE}
+ggplot(playfair3, aes(x=Country, y=value, fill=variable)) +
+         geom_bar(stat = 'identity', position= position_dodge(.8), width = .2)
+```
+
+```{r include=FALSE}
+ggplot(playfair3, aes(x=Country, y=value, fill=variable)) +
+  geom_bar(stat = 'identity', position= position_dodge(0.7), width = .2) +
+  theme(axis.text.x = element_text(angle=90, hjust=1, size=2), legend.position = "none") +
+  labs(x="", y="", fill="", title="Playfair")
+```
+
+```{r include=FALSE}
+ggplot(playfair3, aes(x=Country, y=value, fill=variable)) +
+  geom_bar(stat = 'identity', position= position_dodge(0.7), width = .2) +
+  theme(axis.text.x = element_text(angle=90, hjust=1, size=2), axis.text.y = element_text(size=2),legend.position =      "none") +
+  labs(x="", y="", fill="", title="Chart\nRepresenting the\nExtent Population & Revenue\nof the\nPRINCIPAL NATION in     EUROPE\nin 1804 by\nW. Playfair") +
+  scale_y_continuous(breaks = scales::pretty_breaks(n = 30)) +
+  theme(plot.title = element_text(hjust = .65, vjust = -60, size=5.5))
+```
+
+```{r include=FALSE}
+ggplot(playfair3, aes(x=Country, y=value, fill=variable)) +
+  geom_bar(stat = 'identity', position= position_dodge(0.7), width = .2) +
+  theme(axis.text.x = element_text(angle=90, hjust=1, size=2), axis.text.y = element_text(size=2),legend.position = "none") +
+  labs(x="", y="", fill="", title="Chart\nRepresenting the\nExtent Population & Revenue\nof the\nPRINCIPAL NATION in EUROPE\nin 1804 by\nW. Playfair") +
+  scale_y_continuous(breaks = scales::pretty_breaks(n = 30)) +
+  theme(plot.title = element_text(hjust = .65, vjust = -60, size=5.5))
+```
+
+```{r warning=FALSE}
+colors <- c("rosybrown", "gold3")
+ggplot() +
+  #Overlay graph of Area for each country by size
+  geom_point(data=playfair, aes(x=Country, y=0, size=Area)) +
+  labs(x="", y="") +
+  theme(axis.text.x = element_blank(), axis.text.y =  element_blank(), legend.position = "none") +
+  
+  geom_bar(data=playfair3, aes(x=Country, y=value, fill=variable),stat = 'identity', position=  position_dodge(0.7),     width = .1) +
+  theme(axis.text.x = element_text(angle=90, hjust=1, size=2), axis.text.y = element_text(size=2),legend.position =      "none") +
+  labs(x="", y="", fill="", title="Chart\nRepresenting the\nExtent Population & Revenue\nof the\nPRINCIPAL NATION in     EUROPE\nin 1804 by\nW. Playfair") +
+  scale_y_continuous(breaks = scales::pretty_breaks(n = 30)) +
+  theme(plot.title = element_text(hjust = .65, vjust = -60, size=5.5)) +
+  scale_fill_manual(values = colors) +
+  theme(panel.background = element_rect(fill="antiquewhite2"))
+
+```
+
+## Part 3
+
+```{r}
+britishpoint <- subset(playfair, Country == "Britain & Ireland")
+options(scipen=10000) #Gets rid of scientific notation from legend 
+
+ggplot(playfair, aes(Population, Taxation)) + 
+  geom_point(aes(size=Area)) +  
+  labs(title="Taxation for the Principal Nations in Europe (1804)", size="Area (sq. mi)") +
+  geom_point(data=britishpoint, colour="red") +  
+  geom_text(data=britishpoint, label="Britian and Ireland", vjust=1, hjust=-.1, size=4)
+```
+
+
+## Part 4
+
+When looking at the way that Playfair represented his data I thought since both of the variables he really was arguing about were numeric that a scatterplot would do the best job at showing his point. With Playfair's bar graph you have too really take a minute and analyze too see what is happening where as with a scatterplot graph labeling Britain compared to the rest of the countries really quickly and effectively, in my opinion, shows the harshness by which they are being taxed. In terms of incorporating all of the columns it was a little tough. I thought it might be too much info for having all the countries labeled on the side by color. Instead I labeled Britain and made it a different color from the rest of the countries since all we are really worried about is only Britain's taxation. I also used size to show the area of each country.
+
+One of the bigger issues for me was space in Playfair's graph. I believe that the amount of whitespace in this graph speaks a lot. From a principle of design aspect that might be the most important part of this graph. I also believe the use of color got cleaned up. That was another issue I had with the first graph and I wanted too make sure that color was not confusing in this graph.
+
+I still think I could improve on finding a way too better label the countries. While I think that scatterplot is the best way too show Playfair's point it still does not leave much room for mentioning each country. I made the title showing what the plot represent, but still am not showing what each individual dot represents besides population, taxation and area.
+
+In conclusion, Playfair has a very valid argument when talking about taxation vs. population. Britian is a heavy outlier in this dataset.
+

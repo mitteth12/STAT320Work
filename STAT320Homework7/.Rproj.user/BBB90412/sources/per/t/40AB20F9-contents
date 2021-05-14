@@ -1,0 +1,224 @@
+---
+title: "Comparison of Mapping Packages"
+author: "Scott Thatcher"
+date: "4/2/2021"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+This set of notes will offer a comparison of various mapping packages, their
+syntax and abilities. I'm going to un-creatively use a set of data files
+from the `mapview` package as a starting point:
+
+- `franconia`: Districts within the Franconia region of Germany.
+
+- `trails`: Select hiking trails in Franconia.
+
+- `breweries`: Select breweries in Franconia.
+
+Our goal will be to create a map of the districts, trails and breweries, labeled
+with names, if possible.
+
+```{r}
+library(tidyverse)
+library(sf)
+library(leaflet)
+library(mapview)
+library(RColorBrewer)
+library(tmap)
+```
+
+# Data Cleaning
+
+Not much is needed here, but I'm going to clean the `FGN` column of the `trails`
+data frame because it looks like it's providing a trail name, but with extra
+information thrown in. 
+
+```{r}
+head(trails$FGN)
+```
+
+We'll get rid of the first numeric element and anything after the second "/".
+
+```{r}
+trails <- trails %>%
+  mutate(FGN=str_remove(FGN, "^[0-9]*/")) %>% # Numbers and the first /
+  mutate(FGN=str_remove(FGN, "/.*$"))         # Trailing / to the end.
+```
+
+# Using `ggplot` 
+
+This is a good primary static plot creation tool.
+
+- Type: Static
+
+- Layers: Added with geom_sf.
+
+- Syntax: Layers connected with `+` operator.
+
+- Aesthetics: Specified with familiar `ggplot` aesthetics.
+
+```{r}
+# Note that this takes a while to run, compared to some other options.
+# Better quality?
+ggplot() +
+  geom_sf(data=franconia, aes(fill=district)) +
+  geom_sf(data=trails, color="blue") +
+  geom_sf(data=breweries, color="orange") +
+  labs(fill="District")
+```
+
+# Using `leaflet`
+
+The `leaflet` packages gives you interactive maps, but not necessarily
+optimized for complicated displays.
+
+- Type: Interactive
+
+- Layers: Added with `add...` commands by type.
+
+- Syntax: Layers connected with `%>%` operator.
+
+- Aesthetics: Specified with options in the `add...` commands.
+
+Here are the default aethetic choices form Leaflet.
+
+```{r}
+trails %>% st_transform(crs="WGS84") %>%
+  leaflet() %>%
+  addTiles() %>%
+  addPolygons(data=franconia) %>%
+  addPolylines() %>%
+  addCircleMarkers(data=breweries)
+```
+
+If we'd like a nice map, here are some options added.
+
+```{r}
+# Seems that Leaflet needs a palette function defined for use in functions.
+district.pal <- colorFactor(brewer.pal(3, name="Dark2"),
+                            domain=franconia$district)
+
+# Since only one dataframe uses non-lat/long coordinates, I'll just pipe that
+# one in as the default. If I had more than one data file that needed
+# conversion, I'd need to pre-compute the right coordinates, I think.
+trails %>% st_transform(crs="WGS84") %>%
+  leaflet() %>%
+  addTiles() %>%
+  addPolygons(data=franconia, fillColor=~district.pal(district),
+              popup=~paste("District:", district), opacity=1, weight=1,
+              color="black")  %>%
+  addPolylines(weight=2, color="blue", popup=~paste("Trail:", FGN)) %>%
+  addCircleMarkers(data=breweries, color="orange", 
+                   popup=~paste("Brewery:", brewery),
+                   radius=2, opacity=.8) %>%
+  addLegend(data=franconia, pal=district.pal, values=~district,
+            title="District")
+```
+
+
+# Using `mapview`
+
+The mapview package automates the creation of maps based on `sf` data
+structures, automatically creating the correct types of map elements. Its
+documentation says it's intended for quick, not necessarily production-quality
+maps, but it does have some configuration options.
+
+- Type: Interactive (or Static with `mapshot`)
+
+- Layers: Add more `mapview` commands, or even just raw `sf` data frames.
+
+- Syntax: More than one layer can be added using the `+` operator.
+
+- Aesthetics: Set in the mapview command. Amount of choice?
+
+- Labels: Labels can be added with the `zcol` option, which puts a column
+  name in quotes. Not as flexible as the formula interface. Pre-compute
+  fancier labels?
+  
+Here's the bare minimum:
+
+```{r}
+mapview(franconia) + trails + breweries
+```
+
+Here's with a few more options:
+
+```{r}
+# Note: Adding more explanatory labels before calling mapview. The mapview
+# command is efficient, but doing more with it does seem to require a bit
+# more planning?
+franconia <- franconia %>% mutate(District = paste("District: ", district))
+trails <- trails %>% mutate(Trail = paste("Trail: ", FGN))
+breweries <- breweries %>% mutate(Brewery = paste("Brewery: ", brewery))
+# Note that I had to turn coloring of the breweries off. Coloring of trails
+# seemed like a nice touch, perhaps.
+mapview(franconia, zcol="District") +
+  mapview(trails, zcol="Trail", legend=FALSE) +
+  mapview(breweries, zcol="Brewery", legend=FALSE, color="orange",
+          col.regions="orange", cex=2) 
+```
+
+# Using `tmap`
+
+- Type: Interactive or Static with `tmap_mode()`
+
+- Layers: Add more `tm_` commands. The `tm_shape()` command specifies an `sf`
+  dataframe. The `tm_basemap()` and `tm_tiles()` commands specify external
+  tile sets.
+
+- Syntax: More than one layer can be added using the `+` operator.
+
+- Aesthetics: Set by options in the various `tm_...` commands (see ? help).
+
+- Labels: Set `id` to change hover text, and set `popup.vars` to set click-on
+  pop-ups.
+ 
+
+```{r}
+tmap_mode(mode = "view")
+tm_basemap() +
+  tm_shape(franconia) +
+  tm_polygons(col="district", id="District", title="District", alpha = 0.5) +
+  tm_shape(trails) +
+  tm_lines(col="blue", legend.col.show=FALSE, id="Trail") +
+  tm_shape(breweries) +
+  tm_dots(col="orange", id="Brewery")
+```
+
+Here's the static version:
+
+```{r}
+tmap_mode(mode = "plot")
+tm_basemap() +
+  tm_shape(franconia) +
+  tm_polygons(col="district", id="District", title="District") +
+  tm_shape(trails) +
+  tm_lines(col="blue", legend.col.show=FALSE, id="Trail") +
+  tm_shape(breweries) +
+  tm_dots(col="orange", id="Brewery")
+```
+
+If we want a basemap from an external tile source, we need to do it a bit
+differently, unfortunately. Load the tile set corresponding to the same
+geographic area as the basic `sf` dataframe.
+
+```{r}
+library(tmaptools)
+franconia_topo <- read_osm(franconia, type="osm")
+# Other tile sets are possible. See the `leaflet` sample page
+# for code that contains strings like this one:
+# type="https://a.tile.opentopomap.org/{z}/{x}/{y}.png")
+tmap_mode(mode = "plot")
+tm_shape(franconia_topo) +
+  tm_rgb() + # Each shape needs a layer element. tm_rgb for raster graphics.
+  tm_shape(franconia) +
+  tm_polygons(col="district", id="District", title="District", alpha=0.5) +
+  tm_shape(trails) +
+  tm_lines(col="blue", legend.col.show=FALSE, id="Trail") +
+  tm_shape(breweries) +
+  tm_dots(col="orange", id="Brewery")
+```
+
+
